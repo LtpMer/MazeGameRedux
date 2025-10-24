@@ -1,0 +1,2927 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Maze Game Redux</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+        body {
+
+            font-family: 'Inter', sans-serif;
+
+            background-color: #0d1117; /* Dark background */
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+
+            padding: 20px;
+
+            color: #c9d1d9;
+
+        }
+
+        #game-container, #builder-container {
+
+            border: 4px solid #30363d;
+
+            border-radius: 12px;
+
+            box-shadow: 0 10px 30px rgba(0, 255, 0, 0.1);
+
+            overflow: hidden;
+
+            background-color: #161b22;
+
+        }
+
+        canvas {
+
+            display: block;
+
+        }
+
+        .btn {
+
+            @apply px-6 py-3 bg-green-600 text-white font-bold rounded-lg shadow-lg hover:bg-green-700 transition duration-300 ease-in-out transform hover:scale-105 active:bg-green-800 focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50;
+
+        }
+
+        .btn-secondary {
+
+            @apply px-6 py-3 bg-gray-600 text-white font-bold rounded-lg shadow-lg hover:bg-gray-700 transition duration-300 ease-in-out transform hover:scale-105 active:bg-gray-800 focus:outline-none focus:ring-4 focus:ring-gray-500 focus:ring-opacity-50;
+
+        }
+
+        .btn-danger {
+
+            @apply px-4 py-2 bg-red-600 text-white font-bold rounded-lg shadow-md hover:bg-red-700 transition duration-300;
+
+        }
+
+        .btn-publish {
+
+             @apply px-6 py-3 bg-yellow-500 text-gray-900 font-bold rounded-lg shadow-lg hover:bg-yellow-400 transition duration-300 ease-in-out transform hover:scale-105 active:bg-yellow-600 focus:outline-none focus:ring-4 focus:ring-yellow-500 focus:ring-opacity-50;
+
+        }
+
+        .input-field {
+
+            @apply p-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-green-500 focus:ring-1 focus:ring-green-500 w-20 text-center; 
+
+        }
+
+        .text-input {
+
+            @apply p-3 border border-gray-600 rounded-lg bg-gray-700 text-white focus:ring-indigo-500 focus:border-indigo-500 transition duration-150;
+
+        }
+
+        .screen-container {
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+
+            width: 100%;
+
+            max-width: 800px;
+
+        }
+
+        
+
+        /* --- Tool Button Styles --- */
+
+        .tool-btn {
+
+            @apply px-3 py-2 text-sm font-semibold rounded-md transition duration-150;
+
+        }
+
+        /* Active (selected) state for any tool is bold green */
+
+        .tool-btn.active {
+
+            @apply bg-green-500 text-white shadow-lg ring-2 ring-green-300;
+
+        }
+
+        /* Inactive state for Placeable Tools (Wall, Player, Winpad) - FILLED BLUE */
+
+        .tool-btn:not(.active).placeable-tool {
+
+            @apply bg-blue-600 hover:bg-blue-500 text-white; 
+
+        }
+
+        /* Inactive state for Eraser - gray/secondary color */
+
+        .tool-btn:not(.active):not(.placeable-tool) {
+
+            @apply bg-gray-700 hover:bg-gray-500 text-white; 
+
+        }
+
+        .level-item {
+
+            @apply p-3 mb-2 rounded-md cursor-pointer transition duration-150;
+
+        }
+
+        .level-item:nth-child(even) {
+
+            @apply bg-gray-600 hover:bg-gray-500;
+
+        }
+
+        .level-item:nth-child(odd) {
+
+            @apply bg-gray-700 hover:bg-gray-600;
+
+        }
+
+        /* Modal specific styling */
+
+        .modal {
+
+            position: fixed;
+
+            top: 0;
+
+            left: 0;
+
+            width: 100%;
+
+            height: 100%;
+
+            background-color: rgba(0, 0, 0, 0.75);
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            z-index: 100;
+
+        }
+
+        .modal-content {
+
+            background-color: #1f2937;
+
+            padding: 30px;
+
+            border-radius: 12px;
+
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+
+            width: 90%;
+
+            max-width: 400px;
+
+        }
+
+        
+
+    </style>
+
+</head>
+
+<body>
+
+    <h1 class="text-4xl font-extrabold mb-8 text-green-400">Maze Game Redux</h1>
+
+    <div id="authStatus" class="text-xs mb-4 text-gray-500 h-4">Authenticating...</div>
+
+    <!-- 1. START SCREEN -->
+
+    <div id="startScreen" class="screen-container gap-6">
+
+        
+
+        <button id="authBtn" class="btn-secondary text-xl w-64 h-16">Log In / Sign Up</button>
+
+        <button id="playMazeBtn" class="btn text-xl w-64 h-16">Play Random Maze</button>
+
+        <button id="customizeColorsBtn" class="btn-secondary text-xl w-64 h-16">Customize Colors</button>
+
+        <button id="communityBtn" class="btn-secondary text-xl w-64 h-16">Community Levels & Builder</button>
+
+    </div>
+
+    <!-- 2. CUSTOMIZE COLORS SCREEN -->
+
+    <div id="colorCustomizeScreen" class="screen-container gap-4 p-4 bg-gray-800 rounded-xl shadow-inner hidden">
+
+        <p class="text-lg font-semibold mb-2">Customize Block Colors</p>
+
+        
+
+        <div class="flex flex-col gap-3 w-64">
+
+            <label class="flex justify-between items-center">
+
+                <span class="text-sm">Player Block Color:</span> 
+
+                <input type="color" id="playerColorInput" value="#FF0000" class="w-16 h-8 rounded-md">
+
+            </label>
+
+            <label class="flex justify-between items-center">
+
+                <span class="text-sm">Wall Block Color:</span> 
+
+                <input type="color" id="wallColorInput" value="#30363D" class="w-16 h-8 rounded-md">
+
+            </label>
+
+            <label class="flex justify-between items-center">
+
+                <span class="text-sm">Goal Block Color (Unreached):</span> 
+
+                <input type="color" id="goalColorInput" value="#007BFF" class="w-16 h-8 rounded-md">
+
+            </label>
+
+            <label class="flex justify-between items-center">
+
+                <span class="text-sm">Goal Block Color (Win):</span> 
+
+                <input type="color" id="winColorInput" value="#00FF00" class="w-16 h-8 rounded-md">
+
+            </label>
+
+        </div>
+
+        <button id="saveColorsBtn" class="btn mt-4">Save and Return</button>
+
+    </div>
+
+    <!-- 3. GAME SCREEN -->
+
+    <div id="gameScreen" class="screen-container hidden">
+
+        <div id="game-container">
+
+            <canvas id="mazeCanvas"></canvas>
+
+        </div>
+
+        <div id="statusMessage" class="mt-6 text-lg font-semibold h-8 text-white">
+
+            Use **Arrow Keys** to move the red player block. Find the **Blue** goal!
+
+        </div>
+
+        
+
+        <div class="flex flex-wrap justify-center items-center gap-4 mt-4">
+
+            <!-- Default Controls for Random/Community Levels -->
+
+            <div id="gameControlsDefault">
+
+                <button id="newMazeBtn" class="btn">New Random Maze</button>
+
+                <button id="exitGameBtn" class="btn-secondary">Exit to Menu</button>
+
+            </div>
+
+            <!-- Playtest Controls -->
+
+            <div id="gameControlsPlaytest" class="hidden">
+
+                <button id="backToBuilderBtn" class="btn bg-red-600 hover:bg-red-700">↩️ Back to Builder</button>
+
+            </div>
+
+            <!-- Publish Control (Shown on Win for Drafts) -->
+
+            <button id="publishBtn" class="btn-publish hidden">✨ Publish to Community</button>
+
+        </div>
+
+        <div id="controls" class="mt-8 lg:hidden flex justify-center gap-4">
+
+            <button onclick="movePlayer(0, -1)" class="btn w-16 h-16 text-2xl">↑</button>
+
+            <button onclick="movePlayer(0, 1)" class="btn w-16 h-16 text-2xl">↓</button>
+
+            <button onclick="movePlayer(-1, 0)" class="btn w-16 h-16 text-2xl">←</button>
+
+            <button onclick="movePlayer(1, 0)" class="btn w-16 h-16 text-2xl">→</button>
+
+        </div>
+
+    </div>
+
+    
+
+    <!-- 4. COMMUNITY SCREEN -->
+
+    <div id="communityScreen" class="screen-container hidden gap-6 p-6 bg-gray-800 rounded-xl shadow-inner">
+
+        <h2 id="communityHeader" class="text-3xl font-bold text-green-400">Community Hub</h2>
+
+        <div class="flex gap-4 mb-4">
+
+            <button id="showBuilderBtn" class="btn-secondary">Create/Edit</button>
+
+            <button id="showLevelsBtn" class="btn-secondary">Browse Community Levels</button>
+
+            <button id="showDraftsBtn" class="btn-secondary">My Drafts</button>
+
+        </div>
+
+        
+
+        <div id="communityContent" class="w-full flex flex-col items-center">
+
+            
+
+            <!-- MAZE BUILDER SECTION -->
+
+            <div id="mazeBuilderSection" class="w-full flex flex-col items-center gap-4 p-4 bg-gray-700 rounded-lg hidden">
+
+                <p class="text-sm text-yellow-300">Use the tools below to design on this fixed 15x15 grid. The outermost border is fixed as an impassable boundary. **The player will start at the first Red block found.**</p>
+
+                
+
+                <!-- Random Maze Dimensions -->
+
+                <div class="flex flex-wrap justify-center items-center gap-4 p-4 bg-gray-600 rounded-xl shadow-inner w-full">
+
+                    <p class="text-md font-semibold w-full text-center text-green-300">Random Maze Generation Size</p>
+
+                    <p class="text-sm text-gray-300 w-full text-center">These dimensions are used when you click **Play Random Maze** on the main menu.</p>
+
+                    <label for="mazeWidth" class="text-sm">Width (min 16):</label>
+
+                    <input type="number" id="mazeWidth" value="31" min="16" max="9999" class="input-field">
+
+                    <label for="mazeHeight" class="text-sm">Height (min 16):</label>
+
+                    <input type="number" id="mazeHeight" value="17" min="16" max="9999" class="input-field">
+
+                </div>
+
+                
+
+                <!-- Tool Selection Buttons -->
+
+                <div id="builderTools" class="flex flex-wrap justify-center gap-2 p-3 bg-gray-600 rounded-lg w-full">
+
+                    <button id="toolWall" class="tool-btn active placeable-tool" data-tool="wall">🧱 Wall</button>
+
+                    <button id="toolPlayer" class="tool-btn placeable-tool" data-tool="player">🔴 Player Start</button>
+
+                    <button id="toolWinpad" class="tool-btn placeable-tool" data-tool="winpad">🔵 Winpad</button>
+
+                    <button id="toolErase" class="tool-btn" data-tool="erase">🧽 Eraser (Path)</button>
+
+                </div>
+
+                <div id="builder-container">
+
+                    <canvas id="builderCanvas" width="375" height="375" class="rounded-lg"></canvas>
+
+                </div>
+
+                
+
+                <div class="flex flex-wrap justify-center items-center gap-4">
+
+                    <button id="clearBuilderBtn" class="btn-danger">Clear Grid</button>
+
+                    <button id="playtestMazeBtn" class="btn bg-blue-600 hover:bg-blue-700">▶️ Playtest Maze</button>
+
+                    <input type="text" id="mazeNameInput" placeholder="Enter Draft Name" class="text-input w-48">
+
+                    <button id="saveDraftBtn" class="btn bg-purple-600 hover:bg-purple-700">💾 Save Draft (Private)</button>
+
+                </div>
+
+            </div>
+
+            <!-- COMMUNITY LEVELS LIST SECTION -->
+
+            <div id="levelsListSection" class="w-full hidden">
+
+                <p class="text-sm text-gray-400 mb-2">Click a level to play it!</p>
+
+                <div id="levelsList" class="w-full rounded-lg p-3 max-h-96 overflow-y-auto border border-gray-600">
+
+                    <p class="text-center text-gray-400">Loading community levels...</p>
+
+                </div>
+
+            </div>
+
+            <!-- MY DRAFTS LIST SECTION -->
+
+            <div id="draftsListSection" class="w-full hidden">
+
+                <p id="draftsStatus" class="text-sm text-gray-400 mb-2">Loading your private drafts...</p>
+
+                <div id="draftsList" class="w-full rounded-lg p-3 max-h-96 overflow-y-auto border border-gray-600">
+
+                    <p class="text-center text-gray-400">Please **Log In** to view your saved drafts.</p>
+
+                </div>
+
+            </div>
+
+            
+
+        </div>
+
+        <button id="backToStartFromCommunityBtn" class="btn-secondary mt-4 w-64">Back to Menu</button>
+
+    </div>
+
+    <!-- 5. LOGIN/SIGNUP MODAL -->
+
+    <div id="loginSignupModal" class="modal hidden">
+
+        <div class="modal-content">
+
+            <h2 id="modal-title" class="text-2xl font-bold text-center text-white mb-6">Log In</h2>
+
+            
+
+            <div id="modal-message-box" class="hidden p-3 mb-4 rounded-lg text-sm text-center"></div>
+
+            <div id="modal-form">
+
+                <!-- NEW Player Name Field (Visible only for Sign Up) -->
+
+                <div id="player-name-field" class="mb-4 hidden">
+
+                    <label for="modal-playername" class="block text-sm font-medium text-gray-300 mb-1">Player Name</label>
+
+                    <input type="text" id="modal-playername" class="text-input w-full" placeholder="Your display name" required>
+
+                </div>
+
+                <div class="mb-4">
+
+                    <label for="modal-email" class="block text-sm font-medium text-gray-300 mb-1">Email</label>
+
+                    <input type="email" id="modal-email" class="text-input w-full" placeholder="you@example.com" required>
+
+                </div>
+
+                <div class="mb-4">
+
+                    <label for="modal-password" class="block text-sm font-medium text-gray-300 mb-1">Password</label>
+
+                    <input type="password" id="modal-password" class="text-input w-full" placeholder="Min 6 characters" required>
+
+                </div>
+
+                
+
+                <!-- NEW Forgot Password Link (Visible only for Log In) -->
+
+                <button id="forgot-password-button" class="text-xs text-indigo-400 hover:text-indigo-300 transition duration-150 mb-4 text-left w-full" onclick="handleForgotPasswordPrompt()">
+
+                    Forgot Password?
+
+                </button>
+
+                
+
+                <button id="modal-auth-button" class="w-full py-3 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition duration-150" onclick="handleEmailAuth()">
+
+                    Log In
+
+                </button>
+
+                <p class="mt-4 text-center text-sm text-gray-400">
+
+                    <span id="modal-toggle-text">Need an account?</span>
+
+                    <button class="text-indigo-400 hover:text-indigo-300 font-medium ml-1 transition duration-150" onclick="toggleAuthMode()">
+
+                        <span id="modal-toggle-link-text">Sign Up</span>
+
+                    </button>
+
+                </p>
+
+            </div>
+
+            
+
+            <button id="modal-close-button" class="btn-secondary w-full mt-6" onclick="closeAuthModal()">Close</button>
+
+            <button id="modal-logout-button" class="btn-danger w-full mt-3 hidden" onclick="handleLogout()">Log Out</button>
+
+        </div>
+
+    </div>
+
+<script type="module">
+
+    // --- FIREBASE IMPORTS (REQUIRED FOR COMMUNITY FEATURES) ---
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+    import { getFirestore, collection, query, getDocs, addDoc, onSnapshot, setLogLevel, limit, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // --- GLOBAL CONFIGURATION & HTML ELEMENTS ---
+
+    const gameCanvas = document.getElementById('mazeCanvas');
+
+    const gameCtx = gameCanvas.getContext('2d');
+
+    const builderCanvas = document.getElementById('builderCanvas');
+
+    const builderCtx = builderCanvas.getContext('2d');
+
+    
+
+    const statusMessage = document.getElementById('statusMessage');
+
+    const mazeWidthInput = document.getElementById('mazeWidth');
+
+    const mazeHeightInput = document.getElementById('mazeHeight');
+
+    const authStatus = document.getElementById('authStatus');
+
+    const levelsListDiv = document.getElementById('levelsList');
+
+    const draftsListDiv = document.getElementById('draftsList');
+
+    const draftsStatus = document.getElementById('draftsStatus');
+
+    const mazeNameInput = document.getElementById('mazeNameInput');
+
+    const builderToolsDiv = document.getElementById('builderTools');
+
+    
+
+    // Auth Modal Elements
+
+    const loginSignupModal = document.getElementById('loginSignupModal');
+
+    const modalTitle = document.getElementById('modal-title');
+
+    const modalAuthButton = document.getElementById('modal-auth-button');
+
+    const modalToggleText = document.getElementById('modal-toggle-text');
+
+    const modalToggleLinkText = document.getElementById('modal-toggle-link-text');
+
+    const modalMessageBox = document.getElementById('modal-message-box');
+
+    const modalLogoutButton = document.getElementById('modal-logout-button');
+
+    const modalEmail = document.getElementById('modal-email');
+
+    const modalPassword = document.getElementById('modal-password');
+
+    // NEW Auth Elements
+
+    const modalPlayerName = document.getElementById('modal-playername');
+
+    const playerNameField = document.getElementById('player-name-field');
+
+    const forgotPasswordButton = document.getElementById('forgot-password-button');
+
+    // Screen Elements
+
+    const startScreen = document.getElementById('startScreen');
+
+    const colorCustomizeScreen = document.getElementById('colorCustomizeScreen');
+
+    const gameScreen = document.getElementById('gameScreen');
+
+    const communityScreen = document.getElementById('communityScreen');
+
+    const mazeBuilderSection = document.getElementById('mazeBuilderSection');
+
+    const levelsListSection = document.getElementById('levelsListSection');
+
+    const draftsListSection = document.getElementById('draftsListSection');
+
+    
+
+    // Game Control Containers
+
+    const gameControlsDefault = document.getElementById('gameControlsDefault');
+
+    const gameControlsPlaytest = document.getElementById('gameControlsPlaytest');
+
+    // Buttons
+
+    const authBtn = document.getElementById('authBtn');
+
+    const playMazeBtn = document.getElementById('playMazeBtn');
+
+    const customizeColorsBtn = document.getElementById('customizeColorsBtn');
+
+    const communityBtn = document.getElementById('communityBtn');
+
+    const saveColorsBtn = document.getElementById('saveColorsBtn');
+
+    const newMazeBtn = document.getElementById('newMazeBtn');
+
+    const exitGameBtn = document.getElementById('exitGameBtn');
+
+    const backToStartFromCommunityBtn = document.getElementById('backToStartFromCommunityBtn');
+
+    const showBuilderBtn = document.getElementById('showBuilderBtn');
+
+    const showLevelsBtn = document.getElementById('showLevelsBtn');
+
+    const showDraftsBtn = document.getElementById('showDraftsBtn');
+
+    const clearBuilderBtn = document.getElementById('clearBuilderBtn');
+
+    const saveDraftBtn = document.getElementById('saveDraftBtn'); 
+
+    const playtestMazeBtn = document.getElementById('playtestMazeBtn'); 
+
+    const backToBuilderBtn = document.getElementById('backToBuilderBtn'); 
+
+    const publishBtn = document.getElementById('publishBtn'); 
+
+    // Color Inputs
+
+    const playerColorInput = document.getElementById('playerColorInput');
+
+    const wallColorInput = document.getElementById('wallColorInput');
+
+    const goalColorInput = document.getElementById('goalColorInput');
+
+    const winColorInput = document.getElementById('winColorInput');
+
+    // Display/Viewport Settings
+
+    const VIEWPORT_WIDTH = 800;
+
+    const VIEWPORT_HEIGHT = 600;
+
+    const BLOCK_SIZE = 20; // Game Block Size
+
+    const BUILDER_BLOCK_SIZE = 25; // Builder Block Size
+
+    const BUILDER_DIM = 15; // Builder Maze Size (must be odd, 15x15)
+
+    // Game State
+
+    let maze = [];
+
+    let mazeCols = 0;
+
+    let mazeRows = 0;
+
+    let player = { x: 1, y: 1 };
+
+    let finish = { x: 0, y: 0 }; 
+
+    let isGameOver = false;
+
+    let isBuilding = false; 
+
+    let currentLevelSource = 'none'; // 'random', 'community', 'draft'
+
+    let currentSourceDocId = null; // ID of the community level or draft being played/edited
+
+    // Color State 
+
+    let playerColor = '#FF0000';
+
+    let wallColor = '#30363D';
+
+    let goalColor = '#007BFF';
+
+    let winColor = '#00FF00';
+
+    // Camera State
+
+    let cameraX = 0;
+
+    let cameraY = 0;
+
+    // Builder State
+
+    let builderMaze = [];
+
+    let currentTool = 'wall';
+
+    let isDrawing = false; 
+
+    let isEditingDraftId = null; // ID of the draft currently loaded in the builder
+
+    let isEditingDraftName = '';
+
+    // Auth State
+
+    let currentAuthMode = 'login'; // 'login' or 'signup'
+
+    // --- FIREBASE & DATABASE SETUP ---
+
+    
+
+    // Explicitly using the user-provided Firebase Config
+
+    const firebaseConfig = {
+
+      apiKey: "AIzaSyCbsH9mIPnRT7ZXdtvW06oRr4ZivdE9EQE",
+
+      authDomain: "maze-game-redux.firebaseapp.com",
+
+      projectId: "maze-game-redux",
+
+      storageBucket: "maze-game-redux.firebasestorage.app",
+
+      messagingSenderId: "116539816483",
+
+      appId: "1:116539816483:web:334fb01e3f31f1fd610f96",
+
+      measurementId: "G-DYE5DH44DV"
+
+    };
+
+    // Use the appId from the configuration for Firestore paths
+
+    const appId = firebaseConfig.appId;
+
+    // Preserve the initial auth token for canvas environment authentication
+
+    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+    
+
+    let db;
+
+    let auth;
+
+    let userId = null; 
+
+    let isEmailAuthenticated = false; // New flag for email/password status
+
+    const MAZES_COLLECTION_PATH = `artifacts/${appId}/public/data/mazes`;
+
+    const getDraftsPath = (uid) => `artifacts/${appId}/users/${uid}/draft_mazes`;
+
+    /**
+
+     * Clamps a value between a minimum and maximum.
+
+     */
+
+    const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
+
+    /**
+
+     * Displays a temporary message in the status area.
+
+     */
+
+    function alertMessage(message, isError = false) {
+
+        const originalText = statusMessage.textContent;
+
+        statusMessage.textContent = message;
+
+        statusMessage.classList.remove('text-white', 'text-red-400');
+
+        statusMessage.classList.add(isError ? 'text-red-400' : 'text-yellow-400');
+
+        setTimeout(() => {
+
+            if (statusMessage.textContent === message) {
+
+                 statusMessage.textContent = 'Use **Arrow Keys** to move the red player block. Find the **Blue** goal!'; 
+
+                 statusMessage.classList.remove('text-red-400', 'text-yellow-400');
+
+                 statusMessage.classList.add('text-white');
+
+            }
+
+        }, 3000);
+
+    }
+
+    
+
+    /**
+
+     * Displays a temporary message in the modal message box.
+
+     */
+
+    function modalAlertMessage(message, isError = false) {
+
+        modalMessageBox.innerHTML = message;
+
+        modalMessageBox.classList.remove('hidden', 'bg-red-900', 'text-red-300', 'bg-green-900', 'text-green-300');
+
+        
+
+        if (isError) {
+
+            modalMessageBox.classList.add('bg-red-900', 'text-red-300');
+
+        } else {
+
+            modalMessageBox.classList.add('bg-green-900', 'text-green-300');
+
+        }
+
+        setTimeout(() => {
+
+            modalMessageBox.classList.add('hidden');
+
+        }, 5000);
+
+    }
+
+    /**
+
+     * Initializes Firebase services and handles authentication.
+
+     */
+
+    async function initializeFirebase() {
+
+        // Check if global firebase config variables are available. If so, use them instead of the hardcoded config.
+
+        let configToUse = firebaseConfig;
+
+        if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+
+            try {
+
+                configToUse = JSON.parse(__firebase_config);
+
+            } catch (e) {
+
+                console.error("Failed to parse __firebase_config, using hardcoded config.");
+
+            }
+
+        }
+
+        
+
+        if (!configToUse) {
+
+            console.error("Firebase configuration not available.");
+
+            authStatus.textContent = "Error: Database config missing.";
+
+            return;
+
+        }
+
+        try {
+
+            setLogLevel('Debug');
+
+            const app = initializeApp(configToUse);
+
+            auth = getAuth(app);
+
+            db = getFirestore(app);
+
+            // Sign in using custom token or anonymously for initial connection
+
+            if (initialAuthToken) {
+
+                await signInWithCustomToken(auth, initialAuthToken);
+
+            } else {
+
+                await signInAnonymously(auth);
+
+            }
+
+            onAuthStateChanged(auth, (user) => {
+
+                if (user) {
+
+                    userId = user.uid;
+
+                    isEmailAuthenticated = user.email !== null;
+
+                    
+
+                    if (isEmailAuthenticated) {
+
+                        const displayName = user.displayName || user.email.split('@')[0]; // Use displayName if available
+
+                        authStatus.textContent = `Signed in as: ${displayName} (Email Account)`;
+
+                        authBtn.textContent = 'Log Out';
+
+                        modalLogoutButton.classList.remove('hidden');
+
+                    } else {
+
+                        // Anonymous user (no email)
+
+                        authStatus.textContent = `Playing Anonymously. (ID: ${userId.substring(0, 8)}...)`;
+
+                        authBtn.textContent = 'Log In / Sign Up';
+
+                        modalLogoutButton.classList.add('hidden');
+
+                    }
+
+                    
+
+                    console.log("Authenticated with UID:", userId, "Email Auth:", isEmailAuthenticated);
+
+                    
+
+                    // Refresh community hub lists if they are open
+
+                    if (!communityScreen.classList.contains('hidden')) {
+
+                         loadCommunityLevels();
+
+                         loadMyDrafts();
+
+                    }
+
+                } else {
+
+                    // This happens after sign out
+
+                    userId = null; 
+
+                    isEmailAuthenticated = false;
+
+                    authStatus.textContent = "Signed Out.";
+
+                    authBtn.textContent = 'Log In / Sign Up';
+
+                    modalLogoutButton.classList.add('hidden');
+
+                    // Force anonymous sign-in so we always have a userId for base functionality
+
+                    signInAnonymously(auth).catch(e => console.error("Failed to sign in anonymously:", e));
+
+                }
+
+            });
+
+            
+
+        } catch (error) {
+
+            console.error("Firebase initialization failed:", error);
+
+            authStatus.textContent = "Error: Failed to connect to database.";
+
+        }
+
+    }
+
+    // --- AUTH MODAL FUNCTIONS ---
+
+    window.openAuthModal = function() {
+
+        loginSignupModal.classList.remove('hidden');
+
+        modalEmail.value = '';
+
+        modalPassword.value = '';
+
+        modalPlayerName.value = ''; // Clear player name field
+
+        
+
+        // If already signed in via email, hide the form and show logout
+
+        if (isEmailAuthenticated) {
+
+            const displayName = auth.currentUser.displayName || auth.currentUser.email;
+
+            modalTitle.textContent = `Signed in as ${displayName}`;
+
+            document.getElementById('modal-form').classList.add('hidden');
+
+            modalLogoutButton.classList.remove('hidden');
+
+        } else {
+
+            document.getElementById('modal-form').classList.remove('hidden');
+
+            modalLogoutButton.classList.add('hidden');
+
+            // Ensure the modal state reflects the currentAuthMode (default is 'login')
+
+            toggleAuthMode(currentAuthMode); 
+
+        }
+
+    }
+
+    window.closeAuthModal = function() {
+
+        loginSignupModal.classList.add('hidden');
+
+        modalMessageBox.classList.add('hidden'); // Clear message box on close
+
+    }
+
+    window.toggleAuthMode = function(mode) {
+
+        currentAuthMode = mode || (currentAuthMode === 'login' ? 'signup' : 'login');
+
+        
+
+        modalTitle.textContent = currentAuthMode === 'login' ? 'Log In' : 'Create Account';
+
+        modalAuthButton.textContent = currentAuthMode === 'login' ? 'Log In' : 'Sign Up';
+
+        modalToggleText.textContent = currentAuthMode === 'login' ? 'Need an account?' : 'Already have an account?';
+
+        modalToggleLinkText.textContent = currentAuthMode === 'login' ? 'Sign Up' : 'Log In';
+
+        modalMessageBox.classList.add('hidden');
+
+        
+
+        // Toggle Player Name and Forgot Password visibility
+
+        if (currentAuthMode === 'login') {
+
+            playerNameField.classList.add('hidden');
+
+            forgotPasswordButton.classList.remove('hidden');
+
+        } else { // signup
+
+            playerNameField.classList.remove('hidden');
+
+            forgotPasswordButton.classList.add('hidden');
+
+        }
+
+    }
+
+    /**
+
+     * Handles the primary login or sign up action, including setting player name.
+
+     */
+
+    window.handleEmailAuth = async function() {
+
+        const email = modalEmail.value.trim();
+
+        const password = modalPassword.value;
+
+        const playerName = modalPlayerName.value.trim();
+
+        if (!email || password.length < 6) {
+
+            modalAlertMessage('Please enter a valid email and a password of at least 6 characters.', true);
+
+            return;
+
+        }
+
+        
+
+        modalAuthButton.disabled = true;
+
+        try {
+
+            if (currentAuthMode === 'login') {
+
+                await signInWithEmailAndPassword(auth, email, password);
+
+                modalAlertMessage('Login successful!', false);
+
+            } else { // signup
+
+                if (playerName.length < 2) {
+
+                    modalAlertMessage('Please enter a **Player Name** of at least 2 characters.', true);
+
+                    modalAuthButton.disabled = false;
+
+                    return;
+
+                }
+
+                
+
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+                
+
+                // Set Display Name (Player Name)
+
+                await updateProfile(userCredential.user, {
+
+                    displayName: playerName
+
+                });
+
+                
+
+                modalAlertMessage(`Account created successfully! Welcome, **${playerName}**!`, false);
+
+            }
+
+            closeAuthModal();
+
+        } catch (error) {
+
+            console.error("Auth Error:", error);
+
+            let message = error.message.replace('Firebase: Error (auth/', '').replace(').', '').replace(/-/g, ' ');
+
+            modalAlertMessage(`Authentication Failed: ${message}`, true);
+
+        } finally {
+
+            modalAuthButton.disabled = false;
+
+        }
+
+    }
+
+    
+
+    /**
+
+     * Prompts the user for email for password reset and calls the handler.
+
+     */
+
+    window.handleForgotPasswordPrompt = function() {
+
+        const email = modalEmail.value.trim();
+
+        if (!email) {
+
+            modalAlertMessage("Please enter your email address above before clicking 'Forgot Password'.", true);
+
+            return;
+
+        }
+
+        
+
+        // Disable form elements while processing
+
+        modalEmail.disabled = true;
+
+        modalPassword.disabled = true;
+
+        modalAuthButton.disabled = true;
+
+        forgotPasswordButton.disabled = true;
+
+        handleForgotPassword(email);
+
+    }
+
+    
+
+    /**
+
+     * Sends the password reset email using Firebase API.
+
+     */
+
+    async function handleForgotPassword(email) {
+
+        try {
+
+            await sendPasswordResetEmail(auth, email);
+
+            modalAlertMessage(`Password reset link sent to **${email}**. Check your inbox!`, false);
+
+        } catch (error) {
+
+            console.error("Password Reset Error:", error);
+
+            let message = error.message.includes('user-not-found') 
+
+                ? 'No account found with that email.'
+
+                : error.message.replace('Firebase: Error (auth/', '').replace(').', '').replace(/-/g, ' ');
+
+                
+
+            modalAlertMessage(`Password Reset Failed: ${message}`, true);
+
+        } finally {
+
+            // Re-enable form elements
+
+            modalEmail.disabled = false;
+
+            modalPassword.disabled = false;
+
+            modalAuthButton.disabled = false;
+
+            forgotPasswordButton.disabled = false;
+
+        }
+
+    }
+
+    window.handleLogout = async function() {
+
+        try {
+
+            await signOut(auth);
+
+            closeAuthModal();
+
+            // onAuthStateChanged handles the rest of the UI update
+
+        } catch (error) {
+
+            console.error("Logout Error:", error);
+
+            modalAlertMessage('Logout failed.', true);
+
+        }
+
+    }
+
+    // --- Database Functions ---
+
+    /**
+
+     * Saves or updates the current builder maze as a private draft.
+
+     */
+
+    async function saveDraft() {
+
+        if (!db || !isEmailAuthenticated) {
+
+            alertMessage("You must be logged in with an email account to save drafts.", true);
+
+            return;
+
+        }
+
+        const name = mazeNameInput.value.trim();
+
+        if (name.length < 3) {
+
+            alertMessage("Please enter a name at least 3 characters long.", true);
+
+            return;
+
+        }
+
+        
+
+        const hasStart = builderMaze.some(row => row.includes(2));
+
+        const hasGoal = builderMaze.some(row => row.includes(3));
+
+        if (!hasStart) {
+
+            alertMessage("Maze must contain a Player Start (Red) block.", true);
+
+            return;
+
+        }
+
+        if (!hasGoal) {
+
+            alertMessage("Maze must contain a Winpad (Blue) block.", true);
+
+            return;
+
+        }
+
+        try {
+
+            const mazeDataString = JSON.stringify(builderMaze);
+
+            const draftData = {
+
+                name: name,
+
+                map: mazeDataString,
+
+                authorId: userId,
+
+                author: auth.currentUser.displayName || auth.currentUser.email.split('@')[0] || userId.substring(0, 8),
+
+                width: BUILDER_DIM,
+
+                height: BUILDER_DIM,
+
+                updatedAt: new Date().toISOString()
+
+            };
+
+            
+
+            const draftsCollection = collection(db, getDraftsPath(userId));
+
+            if (isEditingDraftId) {
+
+                // Update existing draft
+
+                const draftRef = doc(draftsCollection, isEditingDraftId);
+
+                await updateDoc(draftRef, draftData);
+
+                alertMessage(`Draft "${name}" updated!`);
+
+            } else {
+
+                // Create new draft
+
+                const docRef = await addDoc(draftsCollection, { ...draftData, createdAt: new Date().toISOString() });
+
+                isEditingDraftId = docRef.id;
+
+                alertMessage(`Draft "${name}" saved!`);
+
+            }
+
+            isEditingDraftName = name;
+
+            loadMyDrafts(); // Refresh the drafts list
+
+        } catch (e) {
+
+            console.error("Error saving draft: ", e);
+
+            alertMessage("Failed to save draft due to a database error.", true);
+
+        }
+
+    }
+
+    
+
+    /**
+
+     * Moves a completed draft to the public community levels.
+
+     */
+
+    async function publishMaze() {
+
+        if (!db || currentLevelSource !== 'draft' || !currentSourceDocId) return;
+
+        if (!isEmailAuthenticated) {
+
+            alertMessage("You must be logged in to publish levels.", true);
+
+            return;
+
+        }
+
+        const name = isEditingDraftName || 'Unnamed Maze'; 
+
+        
+
+        try {
+
+            const mazeDataString = JSON.stringify(maze); // Use the played maze data
+
+            
+
+            // 1. Save to Public Community Collection
+
+            const docRef = await addDoc(collection(db, MAZES_COLLECTION_PATH), {
+
+                name: name,
+
+                map: mazeDataString,
+
+                authorId: userId,
+
+                author: auth.currentUser.displayName || auth.currentUser.email.split('@')[0] || userId.substring(0, 8),
+
+                width: mazeCols,
+
+                height: mazeRows,
+
+                createdAt: new Date().toISOString(),
+
+                publishedFrom: currentSourceDocId // Link back to original draft ID
+
+            });
+
+            
+
+            // 2. Delete from Private Drafts
+
+            const draftRef = doc(db, getDraftsPath(userId), currentSourceDocId);
+
+            await deleteDoc(draftRef);
+
+            alertMessage(`🎉 Maze "${name}" Published! It's now visible in the Community Hub!`);
+
+            
+
+            // 3. Clean up game state and return to menu
+
+            currentLevelSource = 'community';
+
+            currentSourceDocId = null;
+
+            isEditingDraftId = null;
+
+            isEditingDraftName = '';
+
+            
+
+            // Show new post-publish game controls
+
+            gameControlsDefault.classList.remove('hidden');
+
+            gameControlsPlaytest.classList.add('hidden');
+
+            publishBtn.classList.add('hidden');
+
+            loadCommunityLevels(); // Refresh public list
+
+            loadMyDrafts(); // Refresh drafts list
+
+        } catch (e) {
+
+            console.error("Error publishing maze: ", e);
+
+            alertMessage("Failed to publish maze due to a database error.", true);
+
+        }
+
+    }
+
+    /**
+
+     * Loads community mazes from Firestore and populates the list.
+
+     */
+
+    function loadCommunityLevels() {
+
+        if (!db) {
+
+            levelsListDiv.innerHTML = '<p class="text-center text-red-400">Database not connected.</p>';
+
+            return;
+
+        }
+
+        levelsListDiv.innerHTML = '<p class="text-center text-gray-400">Loading community levels...</p>';
+
+        try {
+
+            const q = query(collection(db, MAZES_COLLECTION_PATH), limit(50));
+
+            // Use onSnapshot to keep the list real-time
+
+            onSnapshot(q, (snapshot) => {
+
+                levelsListDiv.innerHTML = '';
+
+                if (snapshot.empty) {
+
+                    levelsListDiv.innerHTML = '<p class="text-center text-gray-400">No community levels found. Be the first to publish one!</p>';
+
+                    return;
+
+                }
+
+                
+
+                snapshot.forEach((doc) => {
+
+                    const data = { id: doc.id, ...doc.data(), source: 'community' };
+
+                    const levelItem = createLevelListItem(data);
+
+                    levelsListDiv.appendChild(levelItem);
+
+                });
+
+            }, (error) => {
+
+                console.error("Error listening to levels: ", error);
+
+                levelsListDiv.innerHTML = `<p class="text-center text-red-400">Failed to load levels: ${error.message}</p>`;
+
+            });
+
+        } catch (error) {
+
+            console.error("Error querying levels: ", error);
+
+        }
+
+    }
+
+    /**
+
+     * Loads the user's private drafts from Firestore and populates the list.
+
+     */
+
+    function loadMyDrafts() {
+
+        if (!db || !userId) {
+
+             draftsStatus.textContent = "Database not ready.";
+
+             return;
+
+        }
+
+        if (!isEmailAuthenticated) {
+
+             draftsStatus.textContent = "Please Log In to view your private drafts.";
+
+             draftsListDiv.innerHTML = `<p class="text-center text-gray-400">Please **Log In** to view your saved drafts. <button onclick="openAuthModal()" class="text-indigo-400 hover:underline">Click here to log in.</button></p>`;
+
+             return;
+
+        }
+
+        
+
+        draftsStatus.textContent = "Loading your private drafts...";
+
+        draftsListDiv.innerHTML = '<p class="text-center text-gray-400">Loading drafts...</p>';
+
+        try {
+
+            const q = query(collection(db, getDraftsPath(userId)), limit(50));
+
+            // Use onSnapshot to keep the list real-time
+
+            onSnapshot(q, (snapshot) => {
+
+                draftsListDiv.innerHTML = '';
+
+                if (snapshot.empty) {
+
+                    draftsStatus.textContent = "You have no saved drafts. Start building!";
+
+                    draftsListDiv.innerHTML = '<p class="text-center text-gray-400">You have no saved drafts.</p>';
+
+                    return;
+
+                }
+
+                
+
+                snapshot.forEach((doc) => {
+
+                    const data = { id: doc.id, ...doc.data(), source: 'draft' };
+
+                    const levelItem = createLevelListItem(data);
+
+                    draftsListDiv.appendChild(levelItem);
+
+                });
+
+                 draftsStatus.textContent = `Showing ${snapshot.size} drafts.`;
+
+            }, (error) => {
+
+                console.error("Error listening to drafts: ", error);
+
+                draftsListDiv.innerHTML = `<p class="text-center text-red-400">Failed to load drafts: ${error.message}</p>`;
+
+            });
+
+        } catch (error) {
+
+            console.error("Error querying drafts: ", error);
+
+        }
+
+    }
+
+    /**
+
+     * Creates an HTML list item for a level/draft.
+
+     */
+
+    function createLevelListItem(data) {
+
+        const isDraft = data.source === 'draft';
+
+        const levelItem = document.createElement('div');
+
+        levelItem.className = 'level-item flex justify-between items-center';
+
+        
+
+        const title = isDraft ? `Draft: ${data.name}` : data.name;
+
+        // Use the full author field which should be the displayName or part of the email
+
+        const authorDisplay = data.author; 
+
+        levelItem.innerHTML = `
+
+            <div>
+
+                <p class="font-bold text-green-300">${title}</p>
+
+                <p class="text-xs text-gray-400">By ${authorDisplay} | Size: ${data.width}x${data.height}</p>
+
+            </div>
+
+            <button class="text-sm px-3 py-1 rounded-md ${isDraft ? 'bg-purple-500 hover:bg-purple-400' : 'bg-green-500 hover:bg-green-400'} text-white">
+
+                ${isDraft ? 'Load Editor' : 'Play'}
+
+            </button>
+
+        `;
+
+        
+
+        levelItem.onclick = () => {
+
+            if (isDraft) {
+
+                // Must be authenticated to edit a draft
+
+                if (!isEmailAuthenticated || userId !== data.authorId) {
+
+                     alertMessage("You can only edit your own saved drafts. Please log in with the correct account.", true);
+
+                     return;
+
+                }
+
+                // Load into builder
+
+                loadDraftToBuilder(data);
+
+            } else {
+
+                // Load into game (anyone can play)
+
+                loadCustomMaze(data.map, data.width, data.height, data.name, data.id, 'community');
+
+            }
+
+        };
+
+        return levelItem;
+
+    }
+
+    // --- Maze Loading & Game Start ---
+
+    
+
+    /**
+
+     * Loads a draft's data directly into the maze builder.
+
+     */
+
+    function loadDraftToBuilder(data) {
+
+        // Since we are loading, we don't clear the builder. 
+
+        try {
+
+            const map = JSON.parse(data.map);
+
+            if (map.length !== BUILDER_DIM || map[0].length !== BUILDER_DIM) {
+
+                alertMessage("Draft dimensions mismatch. Loading as a new 15x15 grid.");
+
+                initializeBuilder();
+
+            } else {
+
+                builderMaze = map;
+
+            }
+
+            
+
+            isEditingDraftId = data.id;
+
+            isEditingDraftName = data.name;
+
+            mazeNameInput.value = data.name;
+
+            
+
+            showCommunityContent('builder');
+
+            drawBuilder();
+
+            alertMessage(`Draft "${data.name}" loaded for editing.`);
+
+        } catch (e) {
+
+            console.error("Error loading draft to builder:", e);
+
+            alertMessage("Failed to load draft data.", true);
+
+            initializeBuilder();
+
+        }
+
+    }
+
+    /**
+
+     * Generates a new random maze and starts the game.
+
+     */
+
+    function generateMaze() {
+
+        currentLevelSource = 'random';
+
+        currentSourceDocId = null;
+
+        
+
+        const width = parseInt(mazeWidthInput.value);
+
+        const height = parseInt(mazeHeightInput.value);
+
+        
+
+        // Safety checks for random generation
+
+        mazeCols = width % 2 === 0 ? width + 1 : width;
+
+        mazeRows = height % 2 === 0 ? height + 1 : height;
+
+        mazeCols = clamp(mazeCols, 17, 1001);
+
+        mazeRows = clamp(mazeRows, 17, 1001);
+
+        // Maze generation logic (carvePath) remains the same
+
+        let tempMaze = Array.from({ length: mazeRows }, () => Array.from({ length: mazeCols }, () => 1));
+
+        const stack = [[1, 1]]; 
+
+        const directions = [ [0, -2], [0, 2], [-2, 0], [2, 0] ]; 
+
+        while (stack.length > 0) {
+
+            const [r, c] = stack[stack.length - 1]; 
+
+            if (tempMaze[r][c] === 1) tempMaze[r][c] = 0;
+
+            directions.sort(() => Math.random() - 0.5);
+
+            let foundNeighbor = false;
+
+            for (const [dr, dc] of directions) {
+
+                const nextR = r + dr;
+
+                const nextC = c + dc;
+
+                if (nextR > 0 && nextR < mazeRows - 1 && nextC > 0 && nextC < mazeCols - 1 && tempMaze[nextR][nextC] === 1) {
+
+                    tempMaze[r + dr / 2][c + dc / 2] = 0; 
+
+                    stack.push([nextR, nextC]);
+
+                    foundNeighbor = true;
+
+                    break; 
+
+                }
+
+            }
+
+            if (!foundNeighbor) stack.pop();
+
+        }
+
+        maze = tempMaze;
+
+        // Set start and finish 
+
+        player = { x: 1, y: 1 };
+
+        finish = { x: mazeCols - 2, y: mazeRows - 2 };
+
+        isGameOver = false;
+
+        
+
+        showScreen('gameScreen');
+
+        drawGame();
+
+    }
+
+    
+
+    /**
+
+     * Loads a custom maze from community or draft data and starts the game.
+
+     * @param {string} mapDataString - JSON string of the 2D array map.
+
+     * @param {number} width - Map width.
+
+     * @param {number} height - Map height.
+
+     * @param {string} name - Name of the level.
+
+     * @param {string} id - Document ID of the source.
+
+     * @param {string} source - 'community', 'draft', or 'playtest'.
+
+     */
+
+    function loadCustomMaze(mapDataString, width, height, name, id, source) {
+
+        try {
+
+            const map = JSON.parse(mapDataString);
+
+            
+
+            let startR = -1, startC = -1; 
+
+            
+
+            // Find the FIRST Player Start block (2) to set the spawn point
+
+            let foundStart = false;
+
+            for (let r = 0; r < height; r++) {
+
+                for (let c = 0; c < width; c++) {
+
+                    if (map[r][c] === 2) {
+
+                        startR = r;
+
+                        startC = c;
+
+                        foundStart = true;
+
+                        break; 
+
+                    }
+
+                }
+
+                if (foundStart) break;
+
+            }
+
+            // Fallback for safety, should not happen due to builder validation
+
+            if (!foundStart) {
+
+                console.error("No Player Start found. Defaulting to (1,1).");
+
+                startR = 1;
+
+                startC = 1;
+
+            }
+
+            maze = map;
+
+            mazeCols = width;
+
+            mazeRows = height;
+
+            player = { x: startC, y: startR };
+
+            finish = { x: 0, y: 0 }; // Not used for custom levels, Winpad (3) is the goal
+
+            isGameOver = false;
+
+            
+
+            currentLevelSource = source;
+
+            currentSourceDocId = id;
+
+            isEditingDraftName = name; // Store name for potential publishing
+
+            gameCanvas.width = VIEWPORT_WIDTH;
+
+            gameCanvas.height = VIEWPORT_HEIGHT;
+
+            statusMessage.textContent = `Playing ${source === 'draft' || source === 'playtest' ? 'Your Draft' : 'Community Level'}: ${name}!`;
+
+            publishBtn.classList.add('hidden');
+
+            showScreen('gameScreen');
+
+            drawGame();
+
+        } catch (e) {
+
+            console.error("Error loading custom maze:", e);
+
+            alertMessage("Failed to load custom maze data.", true);
+
+        }
+
+    }
+
+    /**
+
+     * Initiates the playtest mode from the maze builder.
+
+     */
+
+    function startPlaytest() {
+
+        // 1. Validation check
+
+        const hasStart = builderMaze.some(row => row.includes(2));
+
+        const hasGoal = builderMaze.some(row => row.includes(3));
+
+        if (!hasStart) {
+
+            alertMessage("Playtest failed: Maze must contain a Player Start (Red) block.", true);
+
+            return;
+
+        }
+
+        if (!hasGoal) {
+
+            alertMessage("Playtest failed: Maze must contain a Winpad (Blue) block.", true);
+
+            return;
+
+        }
+
+        
+
+        // 2. Setup Game State (Deep copy the builder maze to not affect the builder while playing)
+
+        const mapDataString = JSON.stringify(builderMaze);
+
+        
+
+        // We use the same loading function but pass 'playtest' as the source
+
+        const source = isEditingDraftId ? 'draft' : 'playtest';
+
+        loadCustomMaze(mapDataString, BUILDER_DIM, BUILDER_DIM, mazeNameInput.value || 'Untitled Draft', isEditingDraftId, source);
+
+        
+
+        // Override status message for playtest mode
+
+        statusMessage.textContent = `[PLAYTEST MODE] Test your design! Use ↩️ Back to Builder when done.`;
+
+    }
+
+    
+
+    /**
+
+     * Exits playtest mode and returns to the builder.
+
+     */
+
+    function exitPlaytest() {
+
+        currentLevelSource = 'none';
+
+        currentSourceDocId = null;
+
+        isGameOver = false;
+
+        showScreen('communityScreen');
+
+        showCommunityContent('builder'); // Ensure builder is showing
+
+    }
+
+    // --- Game Loop and Drawing ---
+
+    /**
+
+     * Updates camera position.
+
+     */
+
+    function updateCamera() {
+
+        const fullMazeWidth = mazeCols * BLOCK_SIZE;
+
+        const fullMazeHeight = mazeRows * BLOCK_SIZE;
+
+        const targetX = player.x * BLOCK_SIZE + BLOCK_SIZE / 2 - VIEWPORT_WIDTH / 2;
+
+        const targetY = player.y * BLOCK_SIZE + BLOCK_SIZE / 2 - VIEWPORT_HEIGHT / 2;
+
+        const maxX = fullMazeWidth > VIEWPORT_WIDTH ? fullMazeWidth - VIEWPORT_WIDTH : 0;
+
+        const maxY = fullMazeHeight > VIEWPORT_HEIGHT ? fullMazeHeight - VIEWPORT_HEIGHT : 0;
+
+        cameraX = clamp(targetX, 0, maxX);
+
+        cameraY = clamp(targetY, 0, maxY);
+
+    }
+
+    /**
+
+     * Draws the main game.
+
+     */
+
+    function drawGame() {
+
+        if (!maze || maze.length === 0) return;
+
+        gameCanvas.width = VIEWPORT_WIDTH;
+
+        gameCanvas.height = VIEWPORT_HEIGHT;
+
+        gameCtx.fillStyle = '#161b22'; 
+
+        gameCtx.fillRect(0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+
+        updateCamera();
+
+        // Draw Maze Walls, Paths, and Goals
+
+        const isRandomMaze = currentLevelSource === 'random';
+
+        
+
+        for (let r = 0; r < mazeRows; r++) {
+
+            for (let c = 0; c < mazeCols; c++) {
+
+                const drawX = c * BLOCK_SIZE - cameraX;
+
+                const drawY = r * BLOCK_SIZE - cameraY;
+
+                // Simple check to only draw blocks within the viewport
+
+                if (drawX + BLOCK_SIZE > 0 && drawX < VIEWPORT_WIDTH && 
+
+                    drawY + BLOCK_SIZE > 0 && drawY < VIEWPORT_HEIGHT) {
+
+                    const cellValue = maze[r][c];
+
+                    let color = null;
+
+                    
+
+                    // 1 = Wall (drawn)
+
+                    if (cellValue === 1) { 
+
+                        color = wallColor; 
+
+                    } 
+
+                    // Handle Goal logic (3 for custom/draft, fixed finish.x/y for random)
+
+                    else if (cellValue === 3 || (isRandomMaze && r === finish.y && c === finish.x)) {
+
+                         // Win color only if game over and player is on it
+
+                        if (isGameOver && player.x === c && player.y === r) {
+
+                            color = winColor; 
+
+                        } else {
+
+                            color = goalColor; 
+
+                        }
+
+                    }
+
+                    // 2 = Player Start (Used for determining spawn point, rendered as path/background)
+
+                    // 0 = Path (Uses background color, #161b22, so no need to draw)
+
+                    if (color) {
+
+                        gameCtx.fillStyle = color; 
+
+                        gameCtx.fillRect(drawX, drawY, BLOCK_SIZE, BLOCK_SIZE);
+
+                    }
+
+                    
+
+                    // If it's a Player Start block (2), and it's NOT the actual player position, render it as path.
+
+                    // The actual player position is handled separately below.
+
+                }
+
+            }
+
+        }
+
+        
+
+        // 3. Draw Player (Red Block) at the current player position
+
+        gameCtx.fillStyle = playerColor; 
+
+        gameCtx.fillRect( player.x * BLOCK_SIZE - cameraX, player.y * BLOCK_SIZE - cameraY, BLOCK_SIZE, BLOCK_SIZE );
+
+    }
+
+    // --- Player Movement and Collision ---
+
+    /**
+
+     * Attempts to move the player and checks for collisions.
+
+     */
+
+    function tryMove(dx, dy) {
+
+        if (isGameOver || gameScreen.classList.contains('hidden')) return;
+
+        const newX = player.x + dx;
+
+        const newY = player.y + dy;
+
+        if (newX < 0 || newX >= mazeCols || newY < 0 || newY >= mazeRows) return;
+
+        
+
+        const nextCell = maze[newY][newX];
+
+        
+
+        // Check for Wall collision (1)
+
+        if (nextCell === 1) return; 
+
+        
+
+        player.x = newX;
+
+        player.y = newY;
+
+        // Check for Winpad collision (3)
+
+        const isRandomMaze = currentLevelSource === 'random'; 
+
+        
+
+        let won = false;
+
+        if (isRandomMaze) {
+
+            if (player.x === finish.x && player.y === finish.y) {
+
+                won = true;
+
+            }
+
+        } else {
+
+            // Custom/Draft/Playtest maze logic: any winpad (3)
+
+            if (nextCell === 3) {
+
+                won = true;
+
+            }
+
+        }
+
+        if (won) {
+
+            isGameOver = true;
+
+            
+
+            if (currentLevelSource === 'draft' || currentLevelSource === 'playtest') {
+
+                // If it was a draft being played, enable the publish button
+
+                statusMessage.textContent = `🏆 MAZE BEATEN! You are ready to publish.`;
+
+                publishBtn.classList.remove('hidden');
+
+                
+
+            } else if (currentLevelSource === 'community') {
+
+                 statusMessage.textContent = '🏆 YOU WIN! Level cleared!';
+
+            } else {
+
+                statusMessage.textContent = '🏆 YOU WIN! Click "New Random Maze" or "Exit to Menu" to continue.';
+
+            }
+
+        }
+
+        drawGame();
+
+    }
+
+    
+
+    // Exposed for mobile controls
+
+    window.movePlayer = function(dx, dy) {
+
+        tryMove(dx, dy);
+
+    }
+
+    // Handle Keyboard Input
+
+    document.addEventListener('keydown', (e) => {
+
+        let dx = 0;
+
+        let dy = 0;
+
+        
+
+        if (gameScreen.classList.contains('hidden')) return;
+
+        switch (e.key) {
+
+            case 'ArrowUp': case 'w': case 'W': dy = -1; break;
+
+            case 'ArrowDown': case 's': case 'S': dy = 1; break;
+
+            case 'ArrowLeft': case 'a': case 'A': dx = -1; break;
+
+            case 'ArrowRight': case 'd': case 'D': dx = 1; break;
+
+            default: return; 
+
+        }
+
+        
+
+        e.preventDefault(); 
+
+        tryMove(dx, dy);
+
+    });
+
+    
+
+    // --- Maze Builder Logic ---
+
+    
+
+    /**
+
+     * Initializes the builder grid to a path (0) with a Wall (1) border, 
+
+     * and resets all draft editing state.
+
+     */
+
+    function initializeBuilder() {
+
+        // Clear all editing state
+
+        isEditingDraftId = null;
+
+        isEditingDraftName = '';
+
+        mazeNameInput.value = '';
+
+        // Start with all paths (0) for the inner area
+
+        builderMaze = Array.from({ length: BUILDER_DIM }, () => 
+
+            Array.from({ length: BUILDER_DIM }, () => 0)
+
+        );
+
+        
+
+        // Set borders to Wall (1) for the fixed boundary
+
+        for (let i = 0; i < BUILDER_DIM; i++) {
+
+            builderMaze[0][i] = 1; // Top border
+
+            builderMaze[BUILDER_DIM - 1][i] = 1; // Bottom border
+
+            builderMaze[i][0] = 1; // Left border
+
+            builderMaze[i][BUILDER_DIM - 1] = 1; // Right border
+
+        }
+
+        // Set default Player Start and Winpad in the inner area
+
+        builderMaze[1][1] = 2; 
+
+        builderMaze[BUILDER_DIM - 2][BUILDER_DIM - 2] = 3;
+
+        
+
+        drawBuilder();
+
+    }
+
+    /**
+
+     * Draws the builder grid.
+
+     */
+
+    function drawBuilder() {
+
+        if (!builderMaze || !isBuilding) return;
+
+        
+
+        builderCtx.fillStyle = '#161b22'; // Dark background for the path/empty space
+
+        builderCtx.fillRect(0, 0, builderCanvas.width, builderCanvas.height);
+
+        for (let r = 0; r < BUILDER_DIM; r++) {
+
+            for (let c = 0; c < BUILDER_DIM; c++) {
+
+                const drawX = c * BUILDER_BLOCK_SIZE;
+
+                const drawY = r * BUILDER_BLOCK_SIZE;
+
+                let color;
+
+                
+
+                // 1 = Wall
+
+                if (builderMaze[r][c] === 1) {
+
+                    color = wallColor; 
+
+                } 
+
+                // 2 = Player Start
+
+                else if (builderMaze[r][c] === 2) {
+
+                    color = playerColor; 
+
+                } 
+
+                // 3 = Winpad
+
+                else if (builderMaze[r][c] === 3) {
+
+                    color = goalColor; 
+
+                }
+
+                // 0 = Path/Eraser: already set to canvas background color (#161b22)
+
+                else {
+
+                    // Draw a subtle difference to show it's an editable path block
+
+                    color = '#161b22'; 
+
+                }
+
+                
+
+                builderCtx.fillStyle = color;
+
+                builderCtx.fillRect(drawX, drawY, BUILDER_BLOCK_SIZE, BUILDER_BLOCK_SIZE);
+
+                // Draw grid lines
+
+                builderCtx.strokeStyle = '#30363d';
+
+                builderCtx.strokeRect(drawX, drawY, BUILDER_BLOCK_SIZE, BUILDER_BLOCK_SIZE);
+
+            }
+
+        }
+
+    }
+
+    
+
+    /**
+
+     * Handles the continuous action of building/erasing blocks.
+
+     */
+
+    function handleBuilderAction(event) {
+
+        const rect = builderCanvas.getBoundingClientRect();
+
+        
+
+        let x, y;
+
+        
+
+        if (event.touches && event.touches.length > 0) {
+
+            const touch = event.touches[0];
+
+            x = touch.clientX - rect.left;
+
+            y = touch.clientY - rect.top;
+
+        } else {
+
+            x = event.clientX - rect.left;
+
+            y = event.clientY - rect.top;
+
+        }
+
+        const c = Math.floor(x / BUILDER_BLOCK_SIZE);
+
+        const r = Math.floor(y / BUILDER_BLOCK_SIZE);
+
+        if (r < 0 || r >= BUILDER_DIM || c < 0 || c >= BUILDER_DIM) return;
+
+        const isBoundary = r === 0 || r === BUILDER_DIM - 1 || c === 0 || c === BUILDER_DIM - 1;
+
+        if (isBoundary) {
+
+            // Boundary is always a wall
+
+            builderMaze[r][c] = 1; 
+
+        } else {
+
+            let newValue;
+
+            switch (currentTool) {
+
+                case 'wall':
+
+                    newValue = 1;
+
+                    break;
+
+                case 'player':
+
+                    // Allows multiple player start blocks
+
+                    newValue = 2;
+
+                    break;
+
+                case 'winpad':
+
+                    // Allows multiple winpad blocks
+
+                    newValue = 3;
+
+                    break;
+
+                case 'erase':
+
+                    newValue = 0; // Path (0)
+
+                    break;
+
+                default: return;
+
+            }
+
+            // Set the new value at the clicked cell, allowing multiples of 2 and 3.
+
+            builderMaze[r][c] = newValue;
+
+        }
+
+        drawBuilder();
+
+    }
+
+    // --- Event Listeners and Screen Management ---
+
+    /**
+
+     * Shows a specific screen and hides all others.
+
+     */
+
+    function showScreen(screenId) {
+
+        startScreen.classList.add('hidden');
+
+        colorCustomizeScreen.classList.add('hidden');
+
+        gameScreen.classList.add('hidden');
+
+        communityScreen.classList.add('hidden');
+
+        publishBtn.classList.add('hidden'); 
+
+        // CRITICAL: If we are leaving the whole Community Hub, clear the builder state
+
+        if (screenId !== 'communityScreen' && !communityScreen.classList.contains('hidden')) {
+
+             if (isBuilding) {
+
+                initializeBuilder();
+
+                isBuilding = false; 
+
+                alertMessage("Draft changes discarded. Returned to main menu.");
+
+             }
+
+        }
+
+        
+
+        isBuilding = false; // Reset the flag unless we are specifically entering the builder below
+
+        if (screenId === 'startScreen') {
+
+            currentLevelSource = 'none';
+
+            startScreen.classList.remove('hidden');
+
+        } else if (screenId === 'colorCustomizeScreen') {
+
+            colorCustomizeScreen.classList.remove('hidden');
+
+        } else if (screenId === 'gameScreen') {
+
+            gameScreen.classList.remove('hidden');
+
+            
+
+            // Manage buttons based on current level source
+
+            const isTestMode = currentLevelSource === 'draft' || currentLevelSource === 'playtest';
+
+            
+
+            gameControlsDefault.classList.toggle('hidden', isTestMode);
+
+            gameControlsPlaytest.classList.toggle('hidden', !isTestMode);
+
+            
+
+            if (isTestMode) {
+
+                statusMessage.textContent = `[PLAYTEST MODE] Test your design! Use ↩️ Back to Builder when done.`;
+
+            } else if (currentLevelSource === 'community') {
+
+                 statusMessage.textContent = `Playing community level.`;
+
+            }
+
+        } else if (screenId === 'communityScreen') {
+
+            communityScreen.classList.remove('hidden');
+
+            // Re-show the active content section. Defaults to drafts if no section is active.
+
+            if (!mazeBuilderSection.classList.contains('hidden')) showCommunityContent('builder');
+
+            else if (!levelsListSection.classList.contains('hidden')) showCommunityContent('levels');
+
+            else showCommunityContent('drafts');
+
+        }
+
+    }
+
+    
+
+    /**
+
+     * Toggles visibility between Maze Builder, Levels List, and Drafts List.
+
+     */
+
+    function showCommunityContent(content) {
+
+        mazeBuilderSection.classList.add('hidden');
+
+        levelsListSection.classList.add('hidden');
+
+        draftsListSection.classList.add('hidden');
+
+        showBuilderBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+
+        showLevelsBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+
+        showDraftsBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+
+        // CRITICAL: Check if we are leaving the builder mode to switch to a different tab
+
+        const wasBuilding = isBuilding; 
+
+        isBuilding = false; // Reset the flag
+
+        if (wasBuilding && content !== 'builder') {
+
+             // If the user was in the builder and switched to Levels or Drafts, discard current state.
+
+             initializeBuilder(); 
+
+        }
+
+        if (content === 'builder') {
+
+            mazeBuilderSection.classList.remove('hidden');
+
+            showBuilderBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+
+            isBuilding = true; // Set building flag only when entering
+
+            if (builderMaze.length === 0 || !builderMaze[0] || builderMaze[0].length === 0) initializeBuilder(); 
+
+            drawBuilder();
+
+        } else if (content === 'levels') {
+
+            levelsListSection.classList.remove('hidden');
+
+            showLevelsBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+
+            if (userId) loadCommunityLevels();
+
+        } else if (content === 'drafts') {
+
+            draftsListSection.classList.remove('hidden');
+
+            showDraftsBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+
+            if (userId) loadMyDrafts();
+
+        }
+
+    }
+
+    
+
+    /**
+
+     * Sets the active tool in the builder and updates button styling.
+
+     */
+
+    function switchTool(tool) {
+
+        currentTool = tool;
+
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+
+            if (btn.dataset.tool === tool) {
+
+                btn.classList.add('active');
+
+            } else {
+
+                btn.classList.remove('active');
+
+            }
+
+        });
+
+    }
+
+    // --- Drag-to-Draw Event Listeners ---
+
+    
+
+    // Start drawing when mouse is pressed down
+
+    builderCanvas.addEventListener('mousedown', (e) => {
+
+        if (!isBuilding) return;
+
+        isDrawing = true;
+
+        handleBuilderAction(e); 
+
+    });
+
+    
+
+    // Continue drawing if mouse is moved and button is held down
+
+    builderCanvas.addEventListener('mousemove', (e) => {
+
+        if (isBuilding && isDrawing) {
+
+            handleBuilderAction(e);
+
+        }
+
+    });
+
+    // Stop drawing on mouse release
+
+    document.addEventListener('mouseup', () => {
+
+        isDrawing = false;
+
+    });
+
+    
+
+    // Added touch listeners for mobile drag-to-draw
+
+    builderCanvas.addEventListener('touchstart', (e) => {
+
+        if (!isBuilding) return;
+
+        isDrawing = true;
+
+        e.preventDefault(); 
+
+        handleBuilderAction(e);
+
+    }, { passive: false });
+
+    builderCanvas.addEventListener('touchmove', (e) => {
+
+        if (isBuilding && isDrawing) {
+
+            e.preventDefault(); 
+
+            handleBuilderAction(e);
+
+        }
+
+    }, { passive: false });
+
+    builderCanvas.addEventListener('touchend', () => {
+
+        isDrawing = false;
+
+    });
+
+    // --- Button Bindings ---
+
+    // Main Menu Buttons
+
+    authBtn.addEventListener('click', openAuthModal);
+
+    playMazeBtn.addEventListener('click', generateMaze);
+
+    customizeColorsBtn.addEventListener('click', () => { showScreen('colorCustomizeScreen'); });
+
+    communityBtn.addEventListener('click', () => { showScreen('communityScreen'); });
+
+    
+
+    // Customize Colors Screen buttons
+
+    saveColorsBtn.addEventListener('click', () => {
+
+        playerColor = playerColorInput.value;
+
+        wallColor = wallColorInput.value;
+
+        goalColor = goalColorInput.value;
+
+        winColor = winColorInput.value;
+
+        showScreen('startScreen');
+
+        if (!gameScreen.classList.contains('hidden')) drawGame();
+
+        drawBuilder();
+
+    });
+
+    // Game Screen buttons
+
+    newMazeBtn.addEventListener('click', generateMaze);
+
+    exitGameBtn.addEventListener('click', () => { showScreen('startScreen'); });
+
+    publishBtn.addEventListener('click', publishMaze);
+
+    
+
+    // Community Screen buttons
+
+    backToStartFromCommunityBtn.addEventListener('click', () => { 
+
+        // This check handles exiting the entire community hub while the builder is visible
+
+        if (!mazeBuilderSection.classList.contains('hidden')) { 
+
+             initializeBuilder();
+
+             alertMessage("Draft changes discarded. Returned to main menu.");
+
+        }
+
+        showScreen('startScreen'); 
+
+    });
+
+    showBuilderBtn.addEventListener('click', () => showCommunityContent('builder'));
+
+    showLevelsBtn.addEventListener('click', () => showCommunityContent('levels'));
+
+    showDraftsBtn.addEventListener('click', () => showCommunityContent('drafts'));
+
+    
+
+    // Maze Builder Buttons
+
+    clearBuilderBtn.addEventListener('click', initializeBuilder);
+
+    saveDraftBtn.addEventListener('click', saveDraft); 
+
+    playtestMazeBtn.addEventListener('click', startPlaytest);
+
+    backToBuilderBtn.addEventListener('click', exitPlaytest);
+
+    // Tool selection event listeners
+
+    builderToolsDiv.addEventListener('click', (e) => {
+
+        const toolButton = e.target.closest('.tool-btn');
+
+        if (toolButton && toolButton.dataset.tool) {
+
+            switchTool(toolButton.dataset.tool);
+
+        }
+
+    });
+
+    // Initial setup: show the start screen and initialize Firebase
+
+    window.onload = function() {
+
+        gameCanvas.width = VIEWPORT_WIDTH;
+
+        gameCanvas.height = VIEWPORT_HEIGHT;
+
+        
+
+        initializeFirebase();
+
+        initializeBuilder(); // Initialize builder grid once at startup
+
+        switchTool('wall'); // Set default tool
+
+        toggleAuthMode('login'); // Initialize auth modal state
+
+    }
+
+</script>
+
+</body>
+
+</html>
